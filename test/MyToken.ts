@@ -2,7 +2,7 @@ import hre from "hardhat";
 import { expect } from "chai";
 import { MyToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { DECIMALS, MINTING_ACOUNT } from "./constant";
+import { DECIMALS, MINTING_AMOUNT } from "./constant";
 
 describe("My Token", () => {
     let myTokenC: MyToken;
@@ -13,7 +13,7 @@ describe("My Token", () => {
             "MyToken",
             "MT",
             DECIMALS,
-            MINTING_ACOUNT,
+            MINTING_AMOUNT,
         ]);
     });
     describe("Basic state value check", () => {
@@ -27,7 +27,7 @@ describe("My Token", () => {
             expect(await myTokenC.decimals()).equal(DECIMALS);
         });
         it("should return 100 totalSupply", async () => {
-            expect(await myTokenC.totalSupply()).equal(MINTING_ACOUNT*10n**DECIMALS);
+            expect(await myTokenC.totalSupply()).equal(MINTING_AMOUNT*10n**DECIMALS);
         });
     });
 
@@ -35,7 +35,16 @@ describe("My Token", () => {
     describe("Mint", () => {
         it("should return 1MT balance for signer 0", async () => {
             const signer0 = signers[0];
-            expect(await myTokenC.balanceOf(signer0)).equal(MINTING_ACOUNT*10n**DECIMALS);
+            expect(await myTokenC.balanceOf(signer0)).equal(
+                MINTING_AMOUNT*10n**DECIMALS
+            );
+        });
+        //TDD: Test Driven Development
+        it("should return or revert when minting infinitly", async () => {
+            const hacker = signers[2];
+            const mintingAgainAmount = hre.ethers.parseUnits("10000", DECIMALS);
+            await expect(myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address)
+        ).to.be.revertedWith("You are not authorized to manage this token");
         });
     });
     describe("Transfer", () => {
@@ -67,7 +76,7 @@ describe("My Token", () => {
             const signer1 = signers[1];
             await expect(
                 myTokenC.transfer(
-                    hre.ethers.parseUnits((MINTING_ACOUNT + 1n).toString(), DECIMALS),
+                    hre.ethers.parseUnits((MINTING_AMOUNT + 1n).toString(), DECIMALS),
                     signer1.address
                 )
             ).to.be.revertedWith("insufficient balance");
